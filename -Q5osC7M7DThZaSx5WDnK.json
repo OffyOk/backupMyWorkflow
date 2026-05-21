@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-01-28T09:51:09.010Z",
+  "updatedAt": "2026-05-21T03:04:36.616Z",
   "createdAt": "2026-01-27T17:59:38.118Z",
   "id": "-Q5osC7M7DThZaSx5WDnK",
   "name": "System - Status Updater",
@@ -97,7 +97,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const item = JSON.parse($json.data); // ข้อมูลจาก HTTP Request (Response จากเว็บแม่)\nconst dbItem = $(\"Loop Over Items\").item.json; // ข้อมูลจาก Database (ID ออเดอร์เรา)\n\nlet providerStatus = item.status || \"PENDING\"; // ค่าที่เว็บแม่ส่งมา\nlet remains = item.remains || null; // ยอดคงเหลือ (ถ้ามี)\n\n// แปลงสถานะเป็น Upper Case เพื่อให้เทียบง่าย\nlet cleanStatus = providerStatus.toString().toUpperCase().trim();\n\n// 🏷️ Mapping Status: แปลงเป็นภาษาเรา\nlet finalStatus = \"PENDING\"; // ค่า Default\n\nif ([\"COMPLETED\", \"SUCCESS\", \"FINISHED\"].includes(cleanStatus)) {\n    finalStatus = \"COMPLETED\";\n} else if ([\"PROCESSING\", \"INPROGRESS\", \"IN_PROGRESS\"].includes(cleanStatus)) {\n    finalStatus = \"PROCESSING\"; // หรือ INPROGRESS ตาม DB คุณ\n} else if ([\"PENDING\", \"Queued\"].includes(cleanStatus)) {\n    finalStatus = \"PENDING\";\n} else if ([\"PARTIAL\", \"PARTIALLY_COMPLETED\"].includes(cleanStatus)) {\n    finalStatus = \"PARTIAL\";\n} else if ([\"CANCELED\", \"CANCELLED\", \"FAIL\", \"REFUNDED\"].includes(cleanStatus)) {\n    finalStatus = \"CANCELED\";\n} else {\n    // กรณีเจอสถานะแปลกๆ ให้คงสถานะเดิมไว้ก่อน หรือ Log ไว้ดู\n    finalStatus = \"PROCESSING\"; \n}\n\nreturn {\n    json: {\n        order_id: dbItem.id,\n        new_status: finalStatus,\n        remains: remains,\n        start_count: item.start_count,\n        provider_status_raw: providerStatus // เก็บไว้ดูเล่นเผื่อ Debug\n    }\n};"
+        "jsCode": "  const item = $json.data !== undefined ? JSON.parse($json.data) : $json; // ข้อมูลจาก HTTP Request (Response จากเว็บแม่)\n\n  let providerStatus = item.status || \"PENDING\"; // ค่าที่เว็บแม่ส่งมา\n  let remains = item.remains || null; // ยอดคงเหลือ (ถ้ามี)\n  const dbItem = $(\"Loop Over Items\").item.json; // ข้อมูลจาก Database (ID ออเดอร์เรา)\n\n\n// แปลงสถานะเป็น Upper Case เพื่อให้เทียบง่าย\nlet cleanStatus = providerStatus.toString().toUpperCase().trim();\n\n// 🏷️ Mapping Status: แปลงเป็นภาษาเรา\nlet finalStatus = \"PENDING\"; // ค่า Default\n\nif ([\"COMPLETED\", \"SUCCESS\", \"FINISHED\"].includes(cleanStatus)) {\n    finalStatus = \"COMPLETED\";\n} else if ([\"PROCESSING\", \"INPROGRESS\", \"IN_PROGRESS\"].includes(cleanStatus)) {\n    finalStatus = \"PROCESSING\"; // หรือ INPROGRESS ตาม DB คุณ\n} else if ([\"PENDING\", \"Queued\"].includes(cleanStatus)) {\n    finalStatus = \"PENDING\";\n} else if ([\"PARTIAL\", \"PARTIALLY_COMPLETED\"].includes(cleanStatus)) {\n    finalStatus = \"PARTIAL\";\n} else if ([\"CANCELED\", \"CANCELLED\", \"FAIL\", \"REFUNDED\"].includes(cleanStatus)) {\n    finalStatus = \"CANCELED\";\n} else {\n    // กรณีเจอสถานะแปลกๆ ให้คงสถานะเดิมไว้ก่อน หรือ Log ไว้ดู\n    finalStatus = \"PROCESSING\"; \n}\n\nreturn {\n    json: {\n        order_id: dbItem.id,\n        provider_id: dbItem.provider_order_id,\n        new_status: finalStatus,\n        remains: remains,\n        start_count: item.start_count,\n        provider_status_raw: providerStatus // เก็บไว้ดูเล่นเผื่อ Debug\n    }\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -223,6 +223,17 @@
           }
         ]
       ]
+    },
+    "Send a text message": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
@@ -234,9 +245,9 @@
     "templateCredsSetupCompleted": true
   },
   "pinData": {},
-  "versionId": "bbe35b08-e24f-4e2b-9466-c88eb29462a8",
+  "versionId": "657e20df-d035-488c-98d3-b9e075fa5317",
   "activeVersionId": "bbe35b08-e24f-4e2b-9466-c88eb29462a8",
-  "versionCounter": 32,
+  "versionCounter": 38,
   "triggerCount": 1,
   "tags": [],
   "shared": [
