@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-01-27T17:58:39.272Z",
+  "updatedAt": "2026-05-23T06:26:13.067Z",
   "createdAt": "2026-01-27T10:03:09.167Z",
   "id": "g368QnXnsGaBVn88sw_BA",
   "name": "Admin - Request Refill",
@@ -33,25 +33,26 @@
       "type": "n8n-nodes-base.formTrigger",
       "typeVersion": 2.4,
       "position": [
-        -544,
-        -48
+        -384,
+        -240
       ],
       "id": "c8f3ef0d-2263-40a0-8759-f0763735b3b8",
       "name": "On form submission",
-      "webhookId": "43567431-09a4-447f-aae1-140b6768b472"
+      "webhookId": "43567431-09a4-447f-aae1-140b6768b472",
+      "disabled": true
     },
     {
       "parameters": {
         "operation": "executeQuery",
         "query": "SELECT \n    o.id, o.quantity, o.start_count, o.service_id, o.link, o.user_id ,\n    s.min_qty as main_min, s.refill_service_id,\n    s2.min_qty as refill_min, s2.price as refill_cost\nFROM orders o\nJOIN services s ON o.service_id = s.id\nLEFT JOIN services s2 ON s.refill_service_id = s2.id\nWHERE o.id = $1;",
         "options": {
-          "queryReplacement": "={{ $json.order_id }}"
+          "queryReplacement": "={{ $json.body.order_id }}"
         }
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -336,
+        -128,
         -48
       ],
       "id": "a7e2c098-0e4b-49f5-99d5-7e43691b1a3e",
@@ -65,12 +66,12 @@
     },
     {
       "parameters": {
-        "jsCode": "const order = $input.first().json;\nconst currentCount = parseInt($('On form submission').first().json.current_count);\n\n// 1. คำนวณยอดที่ต้องมี (Target)\nconst targetCount = parseInt(order.start_count) + parseInt(order.quantity);\n\n// 2. คำนวณยอดที่หายไป (Missing)\nlet missingQty = targetCount - currentCount;\n\nif (missingQty <= 0) {\n    return { json: { status: \"NO_REFILL_NEEDED\", msg: \"ยอดครบหรือเกินแล้ว\" } };\n}\n\n// 3. เลือก Service ที่จะใช้ซ่อม (The Selection Logic)\nlet serviceToUse = order.service_id; // ค่าเริ่มต้น: ใช้ตัวเดิมซ่อม\nlet isRefillOrder = true;\n\n// ถ้าบริการเดิมมีขั้นต่ำสูงกว่ายอดที่หาย (เช่น หาย 10 แต่ขั้นต่ำ 100)\n// และเรามี Refill Service เตรียมไว้\nif (missingQty < order.main_min && order.refill_service_id) {\n    serviceToUse = order.refill_service_id; // สลับไปใช้ตัวซ่อมยอดน้อย\n    \n    // เช็คอีกทีว่าถึงขั้นต่ำตัวซ่อมไหม (เช่น ตัวซ่อมขั้นต่ำ 5 แต่หาย 10 -> ผ่าน)\n    if (missingQty < order.refill_min) {\n        // ถ้ายอดน้อยมากๆ จริงๆ อาจต้องปัดขึ้นให้เท่าขั้นต่ำ\n        missingQty = order.refill_min; \n    }\n} else if (missingQty < order.main_min) {\n    // กรณีไม่มีตัวสำรอง แต่ยอดไม่ถึงขั้นต่ำ -> จำใจต้องปัดขึ้นให้เท่าขั้นต่ำของตัวหลัก\n    // (ยอมขาดทุนเพิ่มนิดหน่อย เพื่อรักษาลูกค้า)\n    missingQty = order.main_min;\n}\n\nreturn {\n    json: {\n        service_id: serviceToUse,\n        link: order.link,\n        quantity: missingQty,\n        user_id: $input.first().json.user_id,\n        action: \"CREATE_REPAIR_ORDER\",\n        original_order_id: order.id,\n        price: 0, // ฟรีสำหรับลูกค้า\n        remark: `Refill for Order #${order.id} (Missing: ${missingQty})`,\n        dependency_order_id: null\n    }\n};"
+        "jsCode": "const order = $input.first().json;\nconst currentCount = parseInt($('Webhook').first().json.body.current_count);\n\n// 1. คำนวณยอดที่ต้องมี (Target)\nconst targetCount = parseInt(order.start_count) + parseInt(order.quantity);\n\n// 2. คำนวณยอดที่หายไป (Missing)\nlet missingQty = targetCount - currentCount;\n\nif (missingQty <= 0) {\n    return { json: { status: \"NO_REFILL_NEEDED\", msg: \"ยอดครบหรือเกินแล้ว\" } };\n}\n\n// 3. เลือก Service ที่จะใช้ซ่อม (The Selection Logic)\nlet serviceToUse = order.service_id; // ค่าเริ่มต้น: ใช้ตัวเดิมซ่อม\nlet isRefillOrder = true;\n\n// ถ้าบริการเดิมมีขั้นต่ำสูงกว่ายอดที่หาย (เช่น หาย 10 แต่ขั้นต่ำ 100)\n// และเรามี Refill Service เตรียมไว้\nif (missingQty < order.main_min && order.refill_service_id) {\n    serviceToUse = order.refill_service_id; // สลับไปใช้ตัวซ่อมยอดน้อย\n    \n    // เช็คอีกทีว่าถึงขั้นต่ำตัวซ่อมไหม (เช่น ตัวซ่อมขั้นต่ำ 5 แต่หาย 10 -> ผ่าน)\n    if (missingQty < order.refill_min) {\n        // ถ้ายอดน้อยมากๆ จริงๆ อาจต้องปัดขึ้นให้เท่าขั้นต่ำ\n        missingQty = order.refill_min; \n    }\n} else if (missingQty < order.main_min) {\n    // กรณีไม่มีตัวสำรอง แต่ยอดไม่ถึงขั้นต่ำ -> จำใจต้องปัดขึ้นให้เท่าขั้นต่ำของตัวหลัก\n    // (ยอมขาดทุนเพิ่มนิดหน่อย เพื่อรักษาลูกค้า)\n    missingQty = order.main_min;\n}\n\nreturn {\n    json: {\n        service_id: serviceToUse,\n        link: order.link,\n        quantity: missingQty,\n        user_id: $input.first().json.user_id,\n        action: \"CREATE_REPAIR_ORDER\",\n        original_order_id: order.id,\n        price: 0, // ฟรีสำหรับลูกค้า\n        remark: `Refill for Order #${order.id} (Missing: ${missingQty})`,\n        dependency_order_id: null\n    }\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -128,
+        80,
         -48
       ],
       "id": "c2d100ba-351c-47a8-9f3a-5ca5b7b5b01f",
@@ -99,23 +100,33 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        80,
+        288,
         -48
       ],
       "id": "c4d55291-49b2-4303-abad-efb91a43daba",
       "name": "Call 'Sub-Create Order'"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "refill",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -368,
+        -48
+      ],
+      "id": "475245b8-2dd2-489a-a90f-6cfd14c8683c",
+      "name": "Webhook",
+      "webhookId": "17d55c10-2efe-47fe-8a3d-6e52de152fb4"
     }
   ],
   "connections": {
     "On form submission": {
       "main": [
-        [
-          {
-            "node": "Execute a SQL query",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        []
       ]
     },
     "Execute a SQL query": {
@@ -139,6 +150,17 @@
           }
         ]
       ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
@@ -149,10 +171,43 @@
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "pinData": {},
-  "versionId": "60d7cd69-25ad-4759-a3f8-1dfed78907da",
-  "activeVersionId": "60d7cd69-25ad-4759-a3f8-1dfed78907da",
-  "versionCounter": 22,
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n.rocketbooster.fun",
+            "user-agent": "Bun/1.1.45",
+            "content-length": "104",
+            "accept": "*/*",
+            "accept-encoding": "gzip, br",
+            "cdn-loop": "cloudflare; loops=1",
+            "cf-connecting-ip": "124.120.117.125",
+            "cf-ipcountry": "TH",
+            "cf-ray": "a001f8f70b409bae-BKK",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-warp-tag-id": "e2565ca6-c83f-45e6-afab-72a71d170c7d",
+            "connection": "keep-alive",
+            "content-type": "application/json",
+            "x-forwarded-for": "124.120.117.125",
+            "x-forwarded-proto": "https"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "order_id": 266,
+            "current_count": 67,
+            "link": "https://www.tiktok.com/@nchpt.pai/photo/7641528490004581650"
+          },
+          "webhookUrl": "https://n8n.rocketbooster.fun/webhook/refill",
+          "executionMode": "production"
+        }
+      }
+    ]
+  },
+  "versionId": "bf392dcf-94e2-4ca4-95c9-8d86232e5b1c",
+  "activeVersionId": "bf392dcf-94e2-4ca4-95c9-8d86232e5b1c",
+  "versionCounter": 32,
   "triggerCount": 1,
   "tags": [],
   "shared": [
