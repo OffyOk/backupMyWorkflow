@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-05-20T05:25:49.113Z",
+  "updatedAt": "2026-09-24T03:14:35.238Z",
   "createdAt": "2026-01-25T19:35:43.958Z",
   "id": "pS6w1B6TW8IjVi6uSUZQL",
   "name": "Main - Order Dispatcher",
@@ -143,6 +143,21 @@
       ],
       "id": "90ef2321-9110-48f5-a3f4-8b08538560b7",
       "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "content": "# THIS MAIN\n1. รับ webhook มาจากฝั่งหน้า web\n2. แบ่งซอยออเดอร์เข้าลูกไปส่งต่อ\n   2.1.  ส่งออเดอร์\n   2.2. ส่งสรุปใน telegram\n   2.3. ส่ง response กลับว่าส่งต่อเสร็จแล้ว",
+        "height": 224,
+        "width": 400
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        320,
+        -192
+      ],
+      "typeVersion": 1,
+      "id": "023ad810-6f7c-480c-984c-abb90f85e914",
+      "name": "Sticky Note"
     }
   ],
   "connections": {
@@ -275,9 +290,9 @@
       }
     ]
   },
-  "versionId": "5f36b5d1-b1a2-42b9-8966-2793b2b262bf",
+  "versionId": "b7e77ef0-4924-419c-8c60-157e30f2b80f",
   "activeVersionId": "5f36b5d1-b1a2-42b9-8966-2793b2b262bf",
-  "versionCounter": 192,
+  "versionCounter": 194,
   "triggerCount": 1,
   "tags": [],
   "shared": [
